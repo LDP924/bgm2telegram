@@ -152,18 +152,18 @@ function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: str
 }
 
 function formatSayMessage(info: WebHookSay, nicknameOverride?: string): string {
+  void nicknameOverride;
+
   const lines: string[] = [];
   const replyUrl = normalizeUrl(info.data.url);
-
-  if (replyUrl) {
-    lines.push(`${userLink(info.data.user, nicknameOverride)} 发表了新吐槽 <a href="${replyUrl}">回复</a>`);
-  } else {
-    lines.push(`${userLink(info.data.user, nicknameOverride)} 发表了新吐槽`);
-  }
 
   const content = compactText(info.data.content, 300);
   if (content) {
     lines.push(escapeHtml(content));
+  }
+
+  if (replyUrl) {
+    lines.push(`<a href="${replyUrl}">回复</a>`);
   }
 
   return lines.join("\n");

@@ -23,43 +23,31 @@
 | BOT_TOKEN    | 是   | `12345678:ASDFGHJKSHWEUW`       | Telegram 机器人的 Bot Token                   |
 | PUSH_CHANNEL | 是   | `@username` 或 `-1001234566778` | 要推送到的频道，支持 username 格式和 ID 格式  |
 | AUTH_KEY     | 是   | `ABC123`                        | 认证密钥，用来防止他人调用你的 Webhook 地址   |
-| NICKNAME     | 否   | `Revincx`                       | 你的昵称，不填写会默认使用 Bangumi 账户的昵称 |
+| NICKNAME     | 否   | `ABC123`                       | 你的昵称，不填写会默认使用 Bangumi 账户的昵称 |
 
 ### Cloudflare Pages 部署
 
-#### 快速入口（最接近一键）
+1. 进入 Cloudflare 控制台并选择 `Pages`。
+2. 导入本仓库。
+3. 构建命令填写 `npm run build`。
+4. 构建输出目录填写 `public`。
+5. 在项目设置中添加环境变量：`BOT_TOKEN`、`PUSH_CHANNEL`、`AUTH_KEY`、`NICKNAME`（可选）。
+6. 部署完成后，在 Bangumi APP 中填入：`https://<你的域名>/api/apphook?key=<AUTH_KEY>`。
 
-[打开 Cloudflare 创建项目](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create)
+### 补充说明
 
-[![Deploy to Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-F38020?logo=cloudflare&logoColor=white)](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create)
+首次创建项目时，在构建向导中填写的环境变量可能不会立即正确应用到部署环境。
 
-1. 进入链接后选择 `Pages`，然后导入本仓库。
-2. 构建命令填写 `npm run build`。
-3. 构建输出目录填写 `public`。
-4. 在项目设置里添加环境变量：`BOT_TOKEN`、`PUSH_CHANNEL`、`AUTH_KEY`、`NICKNAME`（可选）。
-5. 部署完成后，在 Bangumi APP 中填入：`https://<你的域名>/api/apphook?key=<AUTH_KEY>`。
+如果出现 `Request failed with status code 500`，请先检查 `BOT_TOKEN`、`PUSH_CHANNEL`、`AUTH_KEY`、`NICKNAME`（可选）等环境变量是否已正确生效。必要时可前往 `Settings / Variables and Secrets` 页面重新填写或保存一次，然后重新部署。
 
-#### 说明（截至 2026-04-13）
+该情况为本人实际部署过程中遇到的问题，不同环境下未必都会出现，请以实际情况为准。
 
-Cloudflare 官方 Deploy Button 目前仅支持 Workers 应用，不支持 Pages 项目，因此无法完全做到和 Vercel `env=` 参数那样的纯一键注入变量。
+### 说明
 
-### 本地调试（可选）
+由于本人所在地区的网络环境中，原项目使用的 Vercel 部署地址存在直连受限情况，Cloudflare Workers 默认域名同样存在可达性问题，因此本 fork 改为使用 Cloudflare Pages（`pages.dev`）部署。
 
-```bash
-npm install
-cp .dev.vars.example .dev.vars
-npx wrangler pages dev public
-```
-
-Windows PowerShell 可用：
-
-```powershell
-npm.cmd install
-Copy-Item .dev.vars.example .dev.vars
-npx wrangler pages dev public
-```
+以上仅基于本人所在地的实际访问情况，不代表其他地区一定存在相同限制；同时也不保证 `pages.dev` 在所有地区均可稳定直连访问，请以实际网络环境为准。
 
 ---
 
 参见 Issue：[Bangumi #88](https://github.com/czy0729/Bangumi/issues/88)
-

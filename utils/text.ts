@@ -232,7 +232,7 @@ function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: str
 
   const comment = compactText(info.data.comment, 260);
   if (comment) {
-    lines.push(escapeHtml(comment));
+    lines.push(`吐槽了 ${escapeHtml(comment)}`);
   }
 
   const timePart = formatTimeAgo(info.data.ts);

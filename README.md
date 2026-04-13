@@ -33,6 +33,10 @@
 
 ### Cloudflare Pages 部署
 
+[打开 Cloudflare 创建项目](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create)
+
+[![Deploy to Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-F38020?logo=cloudflare&logoColor=white)](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create)
+
 1. 进入 Cloudflare 控制台并选择 `Pages`。
 2. 导入本仓库。
 3. 构建命令填写 `npm run build`。

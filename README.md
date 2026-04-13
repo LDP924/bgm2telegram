@@ -1,6 +1,6 @@
 # bgm2telegram
 
-将 Bangumi 的用户收藏时间线推送到 Telegram 频道
+将 Bangumi 的用户时间线动态推送到 Telegram 频道
 
 ### 效果预览
 
@@ -15,6 +15,16 @@
 地址格式：`https://<域名>/api/apphook?key=<认证密钥>`
 
 使用 Telegram 的 [@BotFather](https://t.me/BotFather) 机器人自助创建 Bot 帐号，然后将 Bot 添加为要推送频道的管理员并给予发送消息权限。
+
+### 当前支持的 WebHook 类型
+
+- `say`
+- `collection`
+- `ep`
+- `mono`
+- `friend`
+- `group`
+- `catalog`
 
 ### 环境变量
 

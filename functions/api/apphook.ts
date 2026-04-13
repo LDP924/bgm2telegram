@@ -1,7 +1,7 @@
-import type { WebHookCollection } from "../../types/WebhookCollection";
+import type { WebHookEvent, WebHookEventType } from "../../types/WebhookCollection";
 import { pushMessage } from "../../utils/bot";
 import { readRuntimeEnv } from "../../utils/config";
-import { genFullMessage, getBangumiImage } from "../../utils/text";
+import { genWebhookMessage, getWebhookPreviewImage } from "../../utils/text";
 
 type PagesFunctionContext = {
   request: Request;
@@ -17,11 +17,22 @@ function jsonResponse(data: unknown, status = 200): Response {
   });
 }
 
-function isCollectionWebhook(value: unknown): value is WebHookCollection {
+const WEBHOOK_TYPES: ReadonlySet<WebHookEventType> = new Set([
+  "say",
+  "collection",
+  "ep",
+  "mono",
+  "friend",
+  "group",
+  "catalog",
+]);
+
+function isWebhook(value: unknown): value is WebHookEvent {
   if (!value || typeof value !== "object") return false;
 
   const body = value as Record<string, unknown>;
-  if (body.type !== "collection") return false;
+  if (typeof body.type !== "string") return false;
+  if (!WEBHOOK_TYPES.has(body.type as WebHookEventType)) return false;
 
   if (!body.data || typeof body.data !== "object") return false;
 
@@ -84,18 +95,18 @@ export async function onRequest(context: PagesFunctionContext): Promise<Response
     );
   }
 
-  if (!isCollectionWebhook(body)) {
+  if (!isWebhook(body)) {
     return jsonResponse({
       ok: true,
       pushed: false,
-      message: "Only accept collection webhook for now.",
+      message: "Unsupported or invalid webhook payload.",
     });
   }
 
   try {
-    const bgmCover = getBangumiImage(body);
+    const bgmCover = getWebhookPreviewImage(body);
     const message = await pushMessage(
-      genFullMessage(body, runtimeEnv.NICKNAME),
+      genWebhookMessage(body, runtimeEnv.NICKNAME),
       runtimeEnv,
       bgmCover,
     );

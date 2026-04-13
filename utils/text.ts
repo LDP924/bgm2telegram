@@ -42,8 +42,6 @@ function toLargeMonoCover(image?: string): string | undefined {
   const normalized = normalizeUrl(image);
   if (!normalized) return undefined;
 
-  // mono cover in webhook payload is commonly /pic/crt/g/... (thumb).
-  // Use /pic/crt/l/... as the larger version.
   return normalized.replace("/pic/crt/g/", "/pic/crt/l/").replace("/pic/crt/s/", "/pic/crt/l/");
 }
 
@@ -61,17 +59,6 @@ function compactText(text: string, maxLength = 140): string {
   if (!compacted) return "";
   if (compacted.length <= maxLength) return compacted;
   return compacted.slice(0, Math.max(maxLength - 3, 0)) + "...";
-}
-
-function normalizeCatalogIntro(content: string): string {
-  return content.replace(/\r?\n+/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function clampTextForTelegram(text: string, maxLength = 1200): string {
-  const compacted = text.replace(/\s+/g, " ").trim();
-  if (!compacted) return "";
-  if (compacted.length <= maxLength) return compacted;
-  return `${compacted.slice(0, Math.max(maxLength - 3, 0))}...`;
 }
 
 function linkifyPlainTextUrls(text: string): string {
@@ -105,11 +92,10 @@ function linkifyPlainTextUrls(text: string): string {
 }
 
 function formatFoldableCatalogIntro(introRaw: string): string {
-  const normalized = clampTextForTelegram(introRaw, 1200);
+  const normalized = compactText(introRaw, 1200);
   if (!normalized) return "";
   const linked = linkifyPlainTextUrls(normalized);
 
-  // Use spoiler to keep long intros collapsed by default in Telegram.
   if (normalized.length > 80) {
     return `    简介：<tg-spoiler>${linked}</tg-spoiler>`;
   }
@@ -141,38 +127,71 @@ function formatRateStars(rate: number): string {
   return `${"★".repeat(filled)}${"☆".repeat(5 - filled)}`;
 }
 
-function subjectAction(subjectType: SubjectType, collectionType: CollectionType): string {
-  const desireMap: Record<SubjectType, string> = {
+const DESIRE_ACTION_MAP: Record<SubjectType, string> = {
+  1: "想读",
+  2: "想看",
+  3: "想听",
+  4: "想玩",
+  6: "想看",
+};
+
+const DONE_ACTION_MAP: Record<SubjectType, string> = {
+  1: "读过",
+  2: "看过",
+  3: "听过",
+  4: "玩过",
+  6: "看过",
+};
+
+const WATCHING_ACTION_MAP: Record<SubjectType, string> = {
+  1: "在读",
+  2: "在看",
+  3: "在听",
+  4: "在玩",
+  6: "在看",
+};
+
+const EP_ACTION_MAP: Record<SubjectType, Record<StatusType, string>> = {
+  1: {
+    0: "更新了进度",
     1: "想读",
-    2: "想看",
-    3: "想听",
-    4: "想玩",
-    6: "想看",
-  };
-
-  const doneMap: Record<SubjectType, string> = {
-    1: "读过",
+    2: "读过",
+    3: "抛弃了",
+  },
+  2: {
+    0: "更新了进度",
+    1: "想看",
     2: "看过",
-    3: "听过",
-    4: "玩过",
-    6: "看过",
-  };
+    3: "抛弃了",
+  },
+  3: {
+    0: "更新了进度",
+    1: "想听",
+    2: "听过",
+    3: "抛弃了",
+  },
+  4: {
+    0: "更新了进度",
+    1: "想玩",
+    2: "玩过",
+    3: "抛弃了",
+  },
+  6: {
+    0: "更新了进度",
+    1: "想看",
+    2: "看过",
+    3: "抛弃了",
+  },
+};
 
-  const watchingMap: Record<SubjectType, string> = {
-    1: "在读",
-    2: "在看",
-    3: "在听",
-    4: "在玩",
-    6: "在看",
-  };
-
+function subjectAction(subjectType: SubjectType, collectionType: CollectionType): string {
   switch (collectionType) {
     case 1:
-      return desireMap[subjectType];
+      return DESIRE_ACTION_MAP[subjectType];
     case 2:
-      return doneMap[subjectType];
+      return DONE_ACTION_MAP[subjectType];
     case 3:
-      return watchingMap[subjectType];
+      return WATCHING_ACTION_MAP[subjectType];
     case 4:
       return "搁置了";
     case 5:
@@ -181,40 +200,13 @@ function subjectAction(subjectType: SubjectType, collectionType: CollectionType)
 }
 
 function epAction(subjectType: SubjectType, statusType: StatusType): string {
-  const actionMap: Record<SubjectType, Record<StatusType, string>> = {
-    1: {
-      0: "更新了进度",
-      1: "想读",
-      2: "读过",
-      3: "抛弃了",
-    },
-    2: {
-      0: "更新了进度",
-      1: "想看",
-      2: "看过",
-      3: "抛弃了",
-    },
-    3: {
-      0: "更新了进度",
-      1: "想听",
-      2: "听过",
-      3: "抛弃了",
-    },
-    4: {
-      0: "更新了进度",
-      1: "想玩",
-      2: "玩过",
-      3: "抛弃了",
-    },
-    6: {
-      0: "更新了进度",
-      1: "想看",
-      2: "看过",
-      3: "抛弃了",
-    },
-  };
+  return EP_ACTION_MAP[subjectType][statusType];
+}
 
-  return actionMap[subjectType][statusType];
+function formatCollectionTags(tags: string[]): string {
+  const normalized = tags.map((tag) => tag.trim()).filter(Boolean);
+  if (!normalized.length) return "";
+  return compactText(normalized.join(" / "), 260);
 }
 
 function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: string): string {
@@ -229,6 +221,11 @@ function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: str
       info.data.type,
     )} ${subject}`,
   );
+
+  const tags = formatCollectionTags(info.data.tags);
+  if (tags) {
+    lines.push(`标签：${escapeHtml(tags)}`);
+  }
 
   const comment = compactText(info.data.comment, 260);
   if (comment) {
@@ -386,9 +383,9 @@ function formatCatalogMessage(info: WebHookCatalog, nicknameOverride?: string): 
     }">${escapeHtml(info.data.catalog.title)}</a>`,
   );
 
-  const intro = normalizeCatalogIntro(info.data.catalog.content);
-  if (intro) {
-    lines.push(formatFoldableCatalogIntro(intro));
+  const introLine = formatFoldableCatalogIntro(info.data.catalog.content);
+  if (introLine) {
+    lines.push(introLine);
   }
 
   const timePart = formatTimeAgo(info.data.ts);

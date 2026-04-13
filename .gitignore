@@ -1,10 +1,6 @@
-# Vercel Project Files
-.vercel
-
 # Node.js Modules
 node_modules
 
-# Build Output
-*.js
-# Git Ignore
-/.gitignore
+# Wrangler local files
+.dev.vars
+.wrangler

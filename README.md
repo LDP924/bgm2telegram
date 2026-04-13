@@ -10,7 +10,7 @@
 
 基于 [Bangumi APP](https://github.com/czy0729/Bangumi) 的 [WebHook](https://www.yuque.com/chenzhenyu-k0epm/znygb4/kfpfze0u7old4en1?singleDoc) 功能运行，仅限在 APP 内的操作才能推送。
 
-请下载版本号不小于 7.10.0 的 Bagumi APP 并在 `设置 / 其他 / Webhook` 页面中配置部署后的 Vercel 地址。
+请下载版本号不小于 7.10.0 的 Bangumi APP 并在 `设置 / 其他 / Webhook` 页面中配置部署后的 Cloudflare Pages 地址。
 
 地址格式：`https://<域名>/api/apphook?key=<认证密钥>`
 
@@ -25,11 +25,39 @@
 | AUTH_KEY     | 是   | `ABC123`                        | 认证密钥，用来防止他人调用你的 Webhook 地址   |
 | NICKNAME     | 否   | `Revincx`                       | 你的昵称，不填写会默认使用 Bangumi 账户的昵称 |
 
-### 一键部署
+### Cloudflare Pages 部署
 
-点击下方的按钮即可一键部署到 Vercel。
+#### 快速入口（最接近一键）
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FRevincx%2Fbgm2telegram&env=BOT_TOKEN,PUSH_CHANNEL,AUTH_KEY)
+[打开 Cloudflare 创建项目](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create)
+
+[![Deploy to Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-F38020?logo=cloudflare&logoColor=white)](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create)
+
+1. 进入链接后选择 `Pages`，然后导入本仓库。
+2. 构建命令填写 `npm run build`。
+3. 构建输出目录填写 `public`。
+4. 在项目设置里添加环境变量：`BOT_TOKEN`、`PUSH_CHANNEL`、`AUTH_KEY`、`NICKNAME`（可选）。
+5. 部署完成后，在 Bangumi APP 中填入：`https://<你的域名>/api/apphook?key=<AUTH_KEY>`。
+
+#### 说明（截至 2026-04-13）
+
+Cloudflare 官方 Deploy Button 目前仅支持 Workers 应用，不支持 Pages 项目，因此无法完全做到和 Vercel `env=` 参数那样的纯一键注入变量。
+
+### 本地调试（可选）
+
+```bash
+npm install
+cp .dev.vars.example .dev.vars
+npx wrangler pages dev public
+```
+
+Windows PowerShell 可用：
+
+```powershell
+npm.cmd install
+Copy-Item .dev.vars.example .dev.vars
+npx wrangler pages dev public
+```
 
 ---
 

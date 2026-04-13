@@ -203,10 +203,16 @@ function epAction(subjectType: SubjectType, statusType: StatusType): string {
   return EP_ACTION_MAP[subjectType][statusType];
 }
 
+function normalizeTagToHashtagToken(tag: string): string {
+  const compacted = tag.trim().replace(/^#+/, "").replace(/\s+/g, "_");
+  if (!compacted) return "";
+  return compacted.replace(/[^\p{L}\p{N}_-]+/gu, "_").replace(/^[_-]+|[_-]+$/g, "");
+}
+
 function formatCollectionTags(tags: string[]): string {
-  const normalized = tags.map((tag) => tag.trim()).filter(Boolean);
+  const normalized = tags.map(normalizeTagToHashtagToken).filter(Boolean);
   if (!normalized.length) return "";
-  return compactText(normalized.join(" / "), 260);
+  return compactText(normalized.map((tag) => `#${tag}`).join(" "), 260);
 }
 
 function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: string): string {

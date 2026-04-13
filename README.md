@@ -25,6 +25,12 @@
 | AUTH_KEY     | 是   | `ABC123`                        | 认证密钥，用来防止他人调用你的 Webhook 地址   |
 | NICKNAME     | 否   | `ABC123`                       | 你的昵称，不填写会默认使用 Bangumi 账户的昵称 |
 
+### 说明
+
+由于本人所在地区的网络环境中，原项目使用的 Vercel 部署地址存在直连受限情况，Cloudflare Workers 默认域名同样存在可达性问题，因此本 fork 改为使用 Cloudflare Pages（`pages.dev`）部署。
+
+以上仅基于本人所在地的实际访问情况，不代表其他地区一定存在相同限制；同时也不保证 `pages.dev` 在所有地区均可稳定直连访问，请以实际网络环境为准。
+
 ### Cloudflare Pages 部署
 
 1. 进入 Cloudflare 控制台并选择 `Pages`。
@@ -41,12 +47,6 @@
 如果出现 `Request failed with status code 500`，请先检查 `BOT_TOKEN`、`PUSH_CHANNEL`、`AUTH_KEY`、`NICKNAME`（可选）等环境变量是否已正确生效。必要时可前往 `Settings / Variables and Secrets` 页面重新填写或保存一次，然后重新部署。
 
 该情况为本人实际部署过程中遇到的问题，不同环境下未必都会出现，请以实际情况为准。
-
-### 说明
-
-由于本人所在地区的网络环境中，原项目使用的 Vercel 部署地址存在直连受限情况，Cloudflare Workers 默认域名同样存在可达性问题，因此本 fork 改为使用 Cloudflare Pages（`pages.dev`）部署。
-
-以上仅基于本人所在地的实际访问情况，不代表其他地区一定存在相同限制；同时也不保证 `pages.dev` 在所有地区均可稳定直连访问，请以实际网络环境为准。
 
 ---
 

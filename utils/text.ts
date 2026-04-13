@@ -164,7 +164,7 @@ function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: str
     `${userLink(info.data.user, nicknameOverride)} ${subjectAction(
       info.data.subject.type,
       info.data.type,
-    )} ${subject} | [cover]`,
+    )} ${subject}`,
   );
 
   const comment = compactText(info.data.comment, 260);
@@ -267,7 +267,7 @@ function formatMonoMessage(info: WebHookMono, nicknameOverride?: string): string
   const lines = [
     `${userLink(info.data.user, nicknameOverride)} 收藏了${monoType} <a href="${monoUrl}">${escapeHtml(
       monoName,
-    )}</a> | [cover]`,
+    )}</a>`,
   ];
 
   const timePart = formatTimeAgo(info.data.ts);
@@ -283,7 +283,7 @@ function formatFriendMessage(info: WebHookFriend, nicknameOverride?: string): st
   const lines = [
     `${userLink(info.data.user, nicknameOverride)} 将 <a href="${friendUrl}">${escapeHtml(
       friendName,
-    )}</a> 加为了好友 | [avatar]`,
+    )}</a> 加为了好友`,
   ];
 
   const timePart = formatTimeAgo(info.data.ts);
@@ -298,7 +298,7 @@ function formatGroupMessage(info: WebHookGroup, nicknameOverride?: string): stri
   lines.push(
     `${userLink(info.data.user, nicknameOverride)} 加入了 <a href="https://bgm.tv/group/${
       info.data.group.id
-    }">${escapeHtml(info.data.group.title)}</a> 小组 | [cover]`,
+    }">${escapeHtml(info.data.group.title)}</a> 小组`,
   );
 
   const summary = compactText(info.data.group.content, 200);
@@ -318,7 +318,7 @@ function formatCatalogMessage(info: WebHookCatalog, nicknameOverride?: string): 
   lines.push(
     `${userLink(info.data.user, nicknameOverride)} 收藏了目录： <a href="https://bgm.tv/index/${
       info.data.catalog.id
-    }">${escapeHtml(info.data.catalog.title)}</a> | [cover]`,
+    }">${escapeHtml(info.data.catalog.title)}</a>`,
   );
 
   const summary = compactText(info.data.catalog.content, 200);

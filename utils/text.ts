@@ -38,6 +38,15 @@ function toLargeBangumiCover(image?: string): string | undefined {
   return normalized.replace("/cover/c/", "/cover/l/");
 }
 
+function toLargeMonoCover(image?: string): string | undefined {
+  const normalized = normalizeUrl(image);
+  if (!normalized) return undefined;
+
+  // mono cover in webhook payload is commonly /pic/crt/g/... (thumb).
+  // Use /pic/crt/l/... as the larger version.
+  return normalized.replace("/pic/crt/g/", "/pic/crt/l/").replace("/pic/crt/s/", "/pic/crt/l/");
+}
+
 function subjectName(subject: Subject): string {
   return subject.name_cn || subject.name;
 }
@@ -52,6 +61,60 @@ function compactText(text: string, maxLength = 140): string {
   if (!compacted) return "";
   if (compacted.length <= maxLength) return compacted;
   return compacted.slice(0, Math.max(maxLength - 3, 0)) + "...";
+}
+
+function normalizeCatalogIntro(content: string): string {
+  return content.replace(/\r?\n+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function clampTextForTelegram(text: string, maxLength = 1200): string {
+  const compacted = text.replace(/\s+/g, " ").trim();
+  if (!compacted) return "";
+  if (compacted.length <= maxLength) return compacted;
+  return `${compacted.slice(0, Math.max(maxLength - 3, 0))}...`;
+}
+
+function linkifyPlainTextUrls(text: string): string {
+  const urlPattern = /https?:\/\/[^\s<>"']+/g;
+  let cursor = 0;
+  let result = "";
+  let matched: RegExpExecArray | null;
+
+  while ((matched = urlPattern.exec(text)) !== null) {
+    const full = matched[0];
+    const start = matched.index;
+    const end = start + full.length;
+
+    result += escapeHtml(text.slice(cursor, start));
+
+    const clean = full.replace(/[),.;!?，。；！？”’）】]+$/u, "");
+    const tail = full.slice(clean.length);
+    const href = normalizeUrl(clean);
+
+    if (href) {
+      result += `<a href="${escapeHtml(href)}">${escapeHtml(clean)}</a>${escapeHtml(tail)}`;
+    } else {
+      result += escapeHtml(full);
+    }
+
+    cursor = end;
+  }
+
+  result += escapeHtml(text.slice(cursor));
+  return result;
+}
+
+function formatFoldableCatalogIntro(introRaw: string): string {
+  const normalized = clampTextForTelegram(introRaw, 1200);
+  if (!normalized) return "";
+  const linked = linkifyPlainTextUrls(normalized);
+
+  // Use spoiler to keep long intros collapsed by default in Telegram.
+  if (normalized.length > 80) {
+    return `    简介：<tg-spoiler>${linked}</tg-spoiler>`;
+  }
+
+  return `    简介：${linked}`;
 }
 
 function formatTimeAgo(ts: number): string {
@@ -323,9 +386,9 @@ function formatCatalogMessage(info: WebHookCatalog, nicknameOverride?: string): 
     }">${escapeHtml(info.data.catalog.title)}</a>`,
   );
 
-  const summary = compactText(info.data.catalog.content, 200);
-  if (summary) {
-    lines.push(`    ${escapeHtml(summary)}`);
+  const intro = normalizeCatalogIntro(info.data.catalog.content);
+  if (intro) {
+    lines.push(formatFoldableCatalogIntro(intro));
   }
 
   const timePart = formatTimeAgo(info.data.ts);
@@ -360,7 +423,7 @@ export function getWebhookPreviewImage(info: WebHookEvent): string | undefined {
     case "ep":
       return toLargeBangumiCover(info.data.subject.image);
     case "mono":
-      return normalizeUrl(info.data.mono.cover);
+      return toLargeMonoCover(info.data.mono.cover);
     case "friend":
       return normalizeUrl(info.data.friend.avatar);
     case "group":

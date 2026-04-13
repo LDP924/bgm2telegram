@@ -183,12 +183,14 @@ function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: str
   return lines.join("\n");
 }
 
-function formatSayMessage(info: WebHookSay): string {
+function formatSayMessage(info: WebHookSay, nicknameOverride?: string): string {
   const lines: string[] = [];
 
   const content = compactText(info.data.content, 300);
   if (content) {
-    lines.push(escapeHtml(content));
+    lines.push(`${userLink(info.data.user, nicknameOverride)} 吐槽了 ${escapeHtml(content)}`);
+  } else {
+    lines.push(`${userLink(info.data.user, nicknameOverride)} 吐槽了`);
   }
 
   const replyUrl = normalizeUrl(info.data.url);
@@ -337,7 +339,7 @@ export function genWebhookMessage(info: WebHookEvent, nicknameOverride?: string)
     case "collection":
       return formatCollectionMessage(info, nicknameOverride);
     case "say":
-      return formatSayMessage(info);
+      return formatSayMessage(info, nicknameOverride);
     case "ep":
       return formatEpMessage(info, nicknameOverride);
     case "mono":

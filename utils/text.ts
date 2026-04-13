@@ -47,11 +47,35 @@ function userLink(user: User, nicknameOverride?: string): string {
   return `<a href="https://bgm.tv/user/${user.username}">${escapeHtml(nickname)}</a>`;
 }
 
-function compactText(text: string, maxLength = 120): string {
+function compactText(text: string, maxLength = 140): string {
   const compacted = text.replace(/\s+/g, " ").trim();
   if (!compacted) return "";
   if (compacted.length <= maxLength) return compacted;
   return compacted.slice(0, Math.max(maxLength - 3, 0)) + "...";
+}
+
+function formatTimeAgo(ts: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const input = Math.floor(ts);
+
+  if (!Number.isFinite(input) || input <= 0) return "";
+
+  const diff = Math.max(1, now - input);
+
+  if (diff < 60) return `${diff}秒前`;
+  if (diff < 60 * 60) return `${Math.floor(diff / 60)}分钟前`;
+  if (diff < 60 * 60 * 24) return `${Math.floor(diff / (60 * 60))}小时前`;
+  if (diff < 60 * 60 * 24 * 30) return `${Math.floor(diff / (60 * 60 * 24))}天前`;
+  if (diff < 60 * 60 * 24 * 365) return `${Math.floor(diff / (60 * 60 * 24 * 30))}个月前`;
+  return `${Math.floor(diff / (60 * 60 * 24 * 365))}年前`;
+}
+
+function formatRateStars(rate: number): string {
+  const score = Math.floor(rate);
+  if (!Number.isFinite(score) || score <= 0) return "";
+
+  const filled = Math.max(1, Math.min(5, Math.round(score / 2)));
+  return `${"★".repeat(filled)}${"☆".repeat(5 - filled)}`;
 }
 
 function subjectAction(subjectType: SubjectType, collectionType: CollectionType): string {
@@ -132,38 +156,50 @@ function epAction(subjectType: SubjectType, statusType: StatusType): string {
 
 function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: string): string {
   const lines: string[] = [];
+
   const subject = `<a href="https://bgm.tv/subject/${info.data.subject.id}">${escapeHtml(
     subjectName(info.data.subject),
   )}</a>`;
-
   lines.push(
     `${userLink(info.data.user, nicknameOverride)} ${subjectAction(
       info.data.subject.type,
       info.data.type,
-    )} ${subject}`,
+    )} ${subject} | [cover]`,
   );
 
-  const comment = compactText(info.data.comment, 240);
+  const comment = compactText(info.data.comment, 260);
   if (comment) {
     lines.push(escapeHtml(comment));
+  }
+
+  const timePart = formatTimeAgo(info.data.ts);
+  const starPart = formatRateStars(info.data.rate);
+  if (timePart && starPart) {
+    lines.push(`${timePart} ${starPart}`);
+  } else if (timePart) {
+    lines.push(timePart);
   }
 
   return lines.join("\n");
 }
 
-function formatSayMessage(info: WebHookSay, nicknameOverride?: string): string {
-  void nicknameOverride;
-
+function formatSayMessage(info: WebHookSay): string {
   const lines: string[] = [];
-  const replyUrl = normalizeUrl(info.data.url);
 
   const content = compactText(info.data.content, 300);
   if (content) {
     lines.push(escapeHtml(content));
   }
 
-  if (replyUrl) {
+  const replyUrl = normalizeUrl(info.data.url);
+  const timePart = formatTimeAgo(info.data.ts);
+
+  if (replyUrl && timePart) {
+    lines.push(`<a href="${replyUrl}">回复</a> ${timePart}`);
+  } else if (replyUrl) {
     lines.push(`<a href="${replyUrl}">回复</a>`);
+  } else if (timePart) {
+    lines.push(timePart);
   }
 
   return lines.join("\n");
@@ -199,26 +235,25 @@ function formatEpMessage(info: WebHookEp, nicknameOverride?: string): string {
 
   if (info.data.batch) {
     lines.push(`${userLink(info.data.user, nicknameOverride)} 完成了 ${subject} ${formatEpProgress(info)}`);
-    return lines.join("\n");
-  }
-
-  if (typeof info.data.vols === "number" && info.data.vols > 0) {
+  } else if (typeof info.data.vols === "number" && info.data.vols > 0) {
     lines.push(
       `${userLink(info.data.user, nicknameOverride)} ${epAction(
         info.data.subject.type,
         info.data.type,
       )} ${subject} ${formatEpProgress(info)}`,
     );
-    return lines.join("\n");
+  } else {
+    lines.push(
+      `${userLink(info.data.user, nicknameOverride)} ${epAction(
+        info.data.subject.type,
+        info.data.type,
+      )} ${formatEpProgress(info)}`,
+    );
+    lines.push(subject);
   }
 
-  lines.push(
-    `${userLink(info.data.user, nicknameOverride)} ${epAction(
-      info.data.subject.type,
-      info.data.type,
-    )} ${formatEpProgress(info)}`,
-  );
-  lines.push(subject);
+  const timePart = formatTimeAgo(info.data.ts);
+  if (timePart) lines.push(timePart);
 
   return lines.join("\n");
 }
@@ -229,18 +264,32 @@ function formatMonoMessage(info: WebHookMono, nicknameOverride?: string): string
   const monoName = info.data.mono.name_cn || info.data.mono.name;
   const monoUrl = `https://bgm.tv/${info.data.mono.id}`;
 
-  return `${userLink(info.data.user, nicknameOverride)} 收藏了${monoType} <a href="${monoUrl}">${escapeHtml(
-    monoName,
-  )}</a>`;
+  const lines = [
+    `${userLink(info.data.user, nicknameOverride)} 收藏了${monoType} <a href="${monoUrl}">${escapeHtml(
+      monoName,
+    )}</a> | [cover]`,
+  ];
+
+  const timePart = formatTimeAgo(info.data.ts);
+  if (timePart) lines.push(timePart);
+
+  return lines.join("\n");
 }
 
 function formatFriendMessage(info: WebHookFriend, nicknameOverride?: string): string {
   const friendName = info.data.friend.nickname || info.data.friend.username;
   const friendUrl = `https://bgm.tv/user/${info.data.friend.username}`;
 
-  return `${userLink(info.data.user, nicknameOverride)} 将 <a href="${friendUrl}">${escapeHtml(
-    friendName,
-  )}</a> 加为了好友`;
+  const lines = [
+    `${userLink(info.data.user, nicknameOverride)} 将 <a href="${friendUrl}">${escapeHtml(
+      friendName,
+    )}</a> 加为了好友 | [avatar]`,
+  ];
+
+  const timePart = formatTimeAgo(info.data.ts);
+  if (timePart) lines.push(timePart);
+
+  return lines.join("\n");
 }
 
 function formatGroupMessage(info: WebHookGroup, nicknameOverride?: string): string {
@@ -249,13 +298,16 @@ function formatGroupMessage(info: WebHookGroup, nicknameOverride?: string): stri
   lines.push(
     `${userLink(info.data.user, nicknameOverride)} 加入了 <a href="https://bgm.tv/group/${
       info.data.group.id
-    }">${escapeHtml(info.data.group.title)}</a> 小组`,
+    }">${escapeHtml(info.data.group.title)}</a> 小组 | [cover]`,
   );
 
-  const summary = compactText(info.data.group.content, 140);
+  const summary = compactText(info.data.group.content, 200);
   if (summary) {
-    lines.push(escapeHtml(summary));
+    lines.push(`    ${escapeHtml(summary)}`);
   }
+
+  const timePart = formatTimeAgo(info.data.ts);
+  if (timePart) lines.push(timePart);
 
   return lines.join("\n");
 }
@@ -266,13 +318,16 @@ function formatCatalogMessage(info: WebHookCatalog, nicknameOverride?: string): 
   lines.push(
     `${userLink(info.data.user, nicknameOverride)} 收藏了目录： <a href="https://bgm.tv/index/${
       info.data.catalog.id
-    }">${escapeHtml(info.data.catalog.title)}</a>`,
+    }">${escapeHtml(info.data.catalog.title)}</a> | [cover]`,
   );
 
-  const summary = compactText(info.data.catalog.content, 140);
+  const summary = compactText(info.data.catalog.content, 200);
   if (summary) {
-    lines.push(escapeHtml(summary));
+    lines.push(`    ${escapeHtml(summary)}`);
   }
+
+  const timePart = formatTimeAgo(info.data.ts);
+  if (timePart) lines.push(timePart);
 
   return lines.join("\n");
 }
@@ -282,7 +337,7 @@ export function genWebhookMessage(info: WebHookEvent, nicknameOverride?: string)
     case "collection":
       return formatCollectionMessage(info, nicknameOverride);
     case "say":
-      return formatSayMessage(info, nicknameOverride);
+      return formatSayMessage(info);
     case "ep":
       return formatEpMessage(info, nicknameOverride);
     case "mono":

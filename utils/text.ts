@@ -120,11 +120,11 @@ function formatTimeAgo(ts: number): string {
 }
 
 function formatRateStars(rate: number): string {
-  const score = Math.floor(rate);
+  const score = Math.round(rate);
   if (!Number.isFinite(score) || score <= 0) return "";
 
-  const filled = Math.max(1, Math.min(5, Math.round(score / 2)));
-  return `${"★".repeat(filled)}${"☆".repeat(5 - filled)}`;
+  const normalized = Math.min(10, score);
+  return `${"★".repeat(normalized)}${"☆".repeat(10 - normalized)}`;
 }
 
 const DESIRE_ACTION_MAP: Record<SubjectType, string> = {
@@ -210,9 +210,16 @@ function normalizeTagToHashtagToken(tag: string): string {
 }
 
 function formatCollectionTags(tags: string[]): string {
-  const normalized = tags.map(normalizeTagToHashtagToken).filter(Boolean);
-  if (!normalized.length) return "";
-  return compactText(normalized.map((tag) => `#${tag}`).join(" "), 260);
+  const hashtagTokens: string[] = [];
+  for (const tag of tags) {
+    const normalized = normalizeTagToHashtagToken(tag);
+    if (normalized) {
+      hashtagTokens.push(`#${normalized}`);
+    }
+  }
+
+  if (!hashtagTokens.length) return "";
+  return compactText(hashtagTokens.join(" "), 260);
 }
 
 function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: string): string {
@@ -230,7 +237,7 @@ function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: str
 
   const tags = formatCollectionTags(info.data.tags);
   if (tags) {
-    lines.push(`标签：${escapeHtml(tags)}`);
+    lines.push(`标签:${tags}`);
   }
 
   const comment = compactText(info.data.comment, 260);

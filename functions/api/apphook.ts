@@ -17,6 +17,16 @@ function jsonResponse(data: unknown, status = 200): Response {
   });
 }
 
+function jsonError(message: string, status: number): Response {
+  return jsonResponse(
+    {
+      ok: false,
+      message,
+    },
+    status,
+  );
+}
+
 const WEBHOOK_TYPES: ReadonlySet<WebHookEventType> = new Set([
   "say",
   "collection",
@@ -46,13 +56,7 @@ function formatError(error: unknown): string {
 
 export async function onRequest(context: PagesFunctionContext): Promise<Response> {
   if (context.request.method !== "POST") {
-    return jsonResponse(
-      {
-        ok: false,
-        message: "Only accept POST request.",
-      },
-      405,
-    );
+    return jsonError("Only accept POST request.", 405);
   }
 
   let runtimeEnv: ReturnType<typeof readRuntimeEnv>;
@@ -60,25 +64,13 @@ export async function onRequest(context: PagesFunctionContext): Promise<Response
   try {
     runtimeEnv = readRuntimeEnv(context.env);
   } catch (error) {
-    return jsonResponse(
-      {
-        ok: false,
-        message: formatError(error),
-      },
-      500,
-    );
+    return jsonError(formatError(error), 500);
   }
 
   const url = new URL(context.request.url);
 
   if (url.searchParams.get("key") !== runtimeEnv.AUTH_KEY) {
-    return jsonResponse(
-      {
-        ok: false,
-        message: "Request Unauthorized.",
-      },
-      401,
-    );
+    return jsonError("Request Unauthorized.", 401);
   }
 
   let body: unknown;
@@ -86,13 +78,7 @@ export async function onRequest(context: PagesFunctionContext): Promise<Response
   try {
     body = await context.request.json();
   } catch {
-    return jsonResponse(
-      {
-        ok: false,
-        message: "Invalid JSON body.",
-      },
-      400,
-    );
+    return jsonError("Invalid JSON body.", 400);
   }
 
   if (!isWebhook(body)) {

@@ -270,9 +270,9 @@ function formatSayMessage(info: WebHookSay, nicknameOverride?: string): string {
   const timePart = formatTimeAgo(info.data.ts);
 
   if (replyUrl && timePart) {
-    lines.push(`<a href="${replyUrl}">回复</a> ${timePart}`);
+    lines.push(`<a href="${escapeHtml(replyUrl)}">回复</a> ${timePart}`);
   } else if (replyUrl) {
-    lines.push(`<a href="${replyUrl}">回复</a>`);
+    lines.push(`<a href="${escapeHtml(replyUrl)}">回复</a>`);
   } else if (timePart) {
     lines.push(timePart);
   }

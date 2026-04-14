@@ -104,14 +104,14 @@ function formatFoldableCatalogIntro(introRaw: string): string {
 }
 
 function formatTimeAgo(ts: number): string {
-  const now = Math.floor(Date.now() / 1000);
-  const input = Math.floor(ts);
+  const now = Date.now() / 1000;
+  const input = Number(ts);
 
   if (!Number.isFinite(input) || input <= 0) return "";
 
-  const diff = Math.max(1, now - input);
+  const diff = Math.max(0, now - input);
 
-  if (diff < 60) return `${diff}秒前`;
+  if (diff < 60) return `${diff.toFixed(2)}秒前`;
   if (diff < 60 * 60) return `${Math.floor(diff / 60)}分钟前`;
   if (diff < 60 * 60 * 24) return `${Math.floor(diff / (60 * 60))}小时前`;
   if (diff < 60 * 60 * 24 * 30) return `${Math.floor(diff / (60 * 60 * 24))}天前`;

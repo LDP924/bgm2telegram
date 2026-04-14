@@ -124,7 +124,7 @@ function formatRateStars(rate: number): string {
   if (!Number.isFinite(score) || score <= 0) return "";
 
   const normalized = Math.min(10, score);
-  return `${"★".repeat(normalized)}${"☆".repeat(10 - normalized)}`;
+  return `评分:${normalized}/10 ${"★".repeat(normalized)}${"☆".repeat(10 - normalized)}`;
 }
 
 const DESIRE_ACTION_MAP: Record<SubjectType, string> = {
@@ -235,21 +235,23 @@ function formatCollectionMessage(info: WebHookCollection, nicknameOverride?: str
     )} ${subject}`,
   );
 
-  const tags = formatCollectionTags(info.data.tags);
-  if (tags) {
-    lines.push(`标签:${tags}`);
-  }
-
   const comment = compactText(info.data.comment, 260);
   if (comment) {
     lines.push(`吐槽了 ${escapeHtml(comment)}`);
   }
 
-  const timePart = formatTimeAgo(info.data.ts);
+  const tags = formatCollectionTags(info.data.tags);
+  if (tags) {
+    lines.push(`标签:${tags}`);
+  }
+
   const starPart = formatRateStars(info.data.rate);
-  if (timePart && starPart) {
-    lines.push(`${timePart} ${starPart}`);
-  } else if (timePart) {
+  if (starPart) {
+    lines.push(starPart);
+  }
+
+  const timePart = formatTimeAgo(info.data.ts);
+  if (timePart) {
     lines.push(timePart);
   }
 

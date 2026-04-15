@@ -288,11 +288,18 @@ function formatEpProgress(info: WebHookEp): string {
   }
 
   if (info.data.batch) {
+    const batchEpName = info.data.ep.name_cn || info.data.ep.name || "";
+    const batchLabel = batchEpName ? `ep${info.data.eps} ${batchEpName}` : `第${info.data.eps}话`;
+    const batchProgress =
+      typeof info.data.ep.id === "number" && info.data.ep.id > 0
+        ? `<a href="https://bgm.tv/ep/${info.data.ep.id}">${escapeHtml(batchLabel)}</a>`
+        : escapeHtml(batchLabel);
+
     const totalEps = info.data.subject.eps;
     if (typeof totalEps === "number" && totalEps > 0) {
-      return `${info.data.eps} of ${totalEps} 话`;
+      return `${batchProgress}（共${totalEps}话）`;
     }
-    return `第${info.data.eps}话`;
+    return batchProgress;
   }
 
   const epName = info.data.ep.name_cn || info.data.ep.name || "";
@@ -311,7 +318,8 @@ function formatEpMessage(info: WebHookEp, nicknameOverride?: string): string {
   )}</a>`;
 
   if (info.data.batch) {
-    lines.push(`${userLink(info.data.user, nicknameOverride)} 完成了 ${subject} ${formatEpProgress(info)}`);
+    lines.push(`${userLink(info.data.user, nicknameOverride)} 看到 ${formatEpProgress(info)}`);
+    lines.push(subject);
   } else if (typeof info.data.vols === "number" && info.data.vols > 0) {
     lines.push(
       `${userLink(info.data.user, nicknameOverride)} ${epAction(
